@@ -7,4 +7,10 @@
     <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Reference Include="3D-Engine">
+      <HintPath>..\..\3D-Engine\3D-Engine\bin\Debug\netcoreapp3.1\3D-Engine.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

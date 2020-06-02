@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using _3D_Engine;
 using System.Windows.Forms;
 
 namespace Physics_Simulator
@@ -15,6 +8,7 @@ namespace Physics_Simulator
         public Form1()
         {
             InitializeComponent();
+            Cube cube = new Cube(Vector3D.Zero, Vector3D.Unit_Negative_Z, Vector3D.Unit_X, 100);
         }
 
     }

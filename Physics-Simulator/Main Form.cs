@@ -9,7 +9,9 @@ namespace Physics_Simulator
     public partial class Main_Form : Form
     {
         private Scene scene;
+        
         private bool running = true;
+        private long update_time;
 
         public Main_Form()
         {
@@ -31,9 +33,8 @@ namespace Physics_Simulator
             scene.Render_Camera = camera;
 
             // Start loop
-            Thread thread = new Thread(Loop);
+            Thread thread = new Thread(Loop) { IsBackground = true };
             thread.Start();
-            thread.IsBackground = true;
         }
 
         private void Loop()
@@ -45,8 +46,7 @@ namespace Physics_Simulator
 
             int no_frames = 0, no_updates = 0, timer = 1;
 
-            long now_time, delta_time;
-            long frame_time = 0, update_time = 0;
+            long now_time, delta_time, frame_time = 0;
             
             Stopwatch sw = Stopwatch.StartNew();
             long start_time = sw.ElapsedMilliseconds;
@@ -69,7 +69,7 @@ namespace Physics_Simulator
 
                 if (update_time >= update_minimum_time)
                 {
-                    Update_Position(update_time);
+                    Update_Position();
                     no_updates++;
                     update_time -= update_minimum_time;
                 }
@@ -85,9 +85,73 @@ namespace Physics_Simulator
 
         private void Canvas_Box_Paint(object sender, PaintEventArgs e) => e.Graphics.DrawImageUnscaled(scene.Canvas, Point.Empty);
 
-        private void Update_Position(long time)
+        private void Update_Position()
         {
+            
+        }
 
+        private void Main_Form_KeyDown(object sender, KeyEventArgs e)
+        {
+            const double camera_pan_dampener = 0.001;
+            const double camera_tilt_dampener = 0.000002;
+
+            switch (e.KeyCode)
+            {
+                case Keys.W:
+                    // Pan forward
+                    scene.Render_Camera.Translate(scene.Render_Camera.World_Direction * camera_pan_dampener * update_time);
+                    break;
+                case Keys.A:
+                    // Pan left
+                    scene.Render_Camera.Translate(scene.Render_Camera.World_Direction_Right * -camera_pan_dampener * update_time);
+                    break;
+                case Keys.D:
+                    // Pan right
+                    scene.Render_Camera.Translate(scene.Render_Camera.World_Direction_Right * camera_pan_dampener * update_time);
+                    break;
+                case Keys.S:
+                    // Pan back
+                    scene.Render_Camera.Translate(scene.Render_Camera.World_Direction * -camera_pan_dampener * update_time);
+                    break;
+                case Keys.Q:
+                    // Pan up
+                    scene.Render_Camera.Translate(scene.Render_Camera.World_Direction_Up * camera_pan_dampener * update_time);
+                    break;
+                case Keys.E:
+                    // Pan down
+                    scene.Render_Camera.Translate(scene.Render_Camera.World_Direction_Up * -camera_pan_dampener * update_time);
+                    break;
+                case Keys.I:
+                    // Rotate up
+                    Matrix4x4 transformation_up = Transform.Rotate(scene.Render_Camera.World_Direction_Right, camera_tilt_dampener * update_time);
+                    scene.Render_Camera.Set_Camera_Direction_1(new Vector3D(transformation_up * new Vector4D(scene.Render_Camera.World_Direction)), new Vector3D(transformation_up * new Vector4D(scene.Render_Camera.World_Direction_Up)));
+                    break;
+                case Keys.J:
+                    // Rotate left
+                    Matrix4x4 transformation_left = Transform.Rotate(scene.Render_Camera.World_Direction_Up, camera_tilt_dampener * update_time);
+                    scene.Render_Camera.Set_Camera_Direction_3(new Vector3D(transformation_left * new Vector4D(scene.Render_Camera.World_Direction_Right)), new Vector3D(transformation_left * new Vector4D(scene.Render_Camera.World_Direction)));
+                    break;
+                case Keys.L:
+                    // Rotate right
+                    Matrix4x4 transformation_right = Transform.Rotate(scene.Render_Camera.World_Direction_Up, -camera_tilt_dampener * update_time);
+                    scene.Render_Camera.Set_Camera_Direction_3(new Vector3D(transformation_right * new Vector4D(scene.Render_Camera.World_Direction_Right)), new Vector3D(transformation_right * new Vector4D(scene.Render_Camera.World_Direction)));
+                    break;
+                case Keys.K:
+                    // Rotate down
+                    Matrix4x4 transformation_down = Transform.Rotate(scene.Render_Camera.World_Direction_Right, -camera_tilt_dampener * update_time);
+                    scene.Render_Camera.Set_Camera_Direction_1(new Vector3D(transformation_down * new Vector4D(scene.Render_Camera.World_Direction)), new Vector3D(transformation_down * new Vector4D(scene.Render_Camera.World_Direction_Up)));
+                    break;
+                case Keys.U:
+                    // Roll left
+                    Matrix4x4 transformation_roll_left = Transform.Rotate(scene.Render_Camera.World_Direction, -camera_tilt_dampener * update_time);
+                    scene.Render_Camera.Set_Camera_Direction_2(new Vector3D(transformation_roll_left * new Vector4D(scene.Render_Camera.World_Direction_Up)), new Vector3D(transformation_roll_left * new Vector4D(scene.Render_Camera.World_Direction_Right)));
+                    break;
+                case Keys.O:
+                    // Roll right
+                    Matrix4x4 transformation_roll_right = Transform.Rotate(scene.Render_Camera.World_Direction, camera_tilt_dampener * update_time);
+                    scene.Render_Camera.Set_Camera_Direction_2(new Vector3D(transformation_roll_right * new Vector4D(scene.Render_Camera.World_Direction_Up)), new Vector3D(transformation_roll_right * new Vector4D(scene.Render_Camera.World_Direction_Right)));
+                    break;
+            }
         }
     }
 }

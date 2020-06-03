@@ -64,6 +64,7 @@
             this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "Main_Form";
             this.Text = "Physics Simulator";
+            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Main_Form_KeyDown);
             ((System.ComponentModel.ISupportInitialize)(this.Canvas_Box)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

@@ -1,4 +1,6 @@
 ﻿using _3D_Engine;
+using Physics_Simulator.Shapes;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Threading;
@@ -9,7 +11,8 @@ namespace Physics_Simulator
     public partial class Main_Form : Form
     {
         private Scene scene;
-        
+        private List<Item> scene_items = new List<Item>();
+
         private bool running = true;
         private long update_time;
 
@@ -31,6 +34,13 @@ namespace Physics_Simulator
 
             Perspective_Camera camera = new Perspective_Camera(new Vector3D(0, 0, 100), scene.Shape_List[0].Render_Mesh, Vector3D.Unit_Y, camera_width, camera_height, 10, 750);
             scene.Render_Camera = camera;
+
+            // Add some shapes
+            Cube cube_mesh = new Cube(new Vector3D(10, 10, 10), Vector3D.Unit_Negative_Z, Vector3D.Unit_Y, 100);
+            Shape cube = new Shape(cube_mesh);
+            scene.Add(cube);
+            Item cube_item = new Item(cube, Vector3D.Zero, new Vector3D(0, Constants.Grav_Acc, 0));
+            scene_items.Add(cube_item);
 
             // Start loop
             Thread thread = new Thread(Loop) { IsBackground = true };
@@ -87,7 +97,11 @@ namespace Physics_Simulator
 
         private void Update_Position()
         {
-            
+            foreach (Item item in scene_items)
+            {
+                item.Velocity += item.Acceleration;
+                item.Position += item.Velocity * update_time;
+            }
         }
 
         private void Main_Form_KeyDown(object sender, KeyEventArgs e)

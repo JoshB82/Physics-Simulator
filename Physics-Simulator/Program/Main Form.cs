@@ -1,5 +1,4 @@
 ﻿using _3D_Engine;
-using Physics_Simulator.Shapes;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -32,15 +31,37 @@ namespace Physics_Simulator
             double camera_width = Canvas_Box.Width / 10;
             double camera_height = Canvas_Box.Height / 10;
 
-            Perspective_Camera camera = new Perspective_Camera(new Vector3D(0, 0, 100), scene.Shape_List[0].Render_Mesh, Vector3D.Unit_Y, camera_width, camera_height, 10, 750);
+            Perspective_Camera camera = new Perspective_Camera(new Vector3D(0, 0, -100), scene.Shapes[0].Render_Mesh, Vector3D.Unit_Y, camera_width, camera_height, 10, 750);
             scene.Render_Camera = camera;
 
             // Add some shapes
+
+            Vector3D[] texture_vertices = new Vector3D[4]
+            {
+                new Vector3D(0, 0, 1),
+                new Vector3D(1, 0, 1),
+                new Vector3D(1, 1, 1),
+                new Vector3D(0, 1, 1)
+            };
+            Texture smiley = new Texture(Properties.Resources.smiley, texture_vertices);
+
             Cube cube_mesh = new Cube(new Vector3D(10, 10, 10), Vector3D.Unit_Negative_Z, Vector3D.Unit_Y, 100);
             Shape cube = new Shape(cube_mesh);
-            scene.Add(cube);
+            //scene.Add(cube);
             Item cube_item = new Item(cube, Vector3D.Zero, new Vector3D(0, Constants.Grav_Acc, 0));
             scene_items.Add(cube_item);
+
+            Square square_mesh = new Square(Vector3D.Zero, Vector3D.Unit_X, Vector3D.Unit_Z, 100);
+            Shape square = new Shape(square_mesh);
+            scene.Add(square);
+
+            // Circle test_circle_mesh = new Circle(new Vector3D(100, 100, 100), Vector3D.Unit_X, Vector3D.Unit_Y, 50, 30);
+            //Shape test_circle = new Shape(test_circle_mesh);
+            //scene.Add(test_circle);
+
+            //Pyramid test_pyramid_mesh = new Pyramid(new Vector3D(100, 100, 100), Vector3D.Unit_X, Vector3D.Unit_Y, 50, 20, 30);
+            //Shape test_pyramid = new Shape(test_pyramid_mesh);
+            //scene.Add(test_pyramid);
 
             // Start loop
             Thread thread = new Thread(Loop) { IsBackground = true };
@@ -79,7 +100,7 @@ namespace Physics_Simulator
 
                 if (update_time >= update_minimum_time)
                 {
-                    Update_Position();
+                    //Update_Position(); uncomment
                     no_updates++;
                     update_time -= update_minimum_time;
                 }
@@ -99,71 +120,76 @@ namespace Physics_Simulator
         {
             foreach (Item item in scene_items)
             {
-                item.Velocity += item.Acceleration;
-                item.Position += item.Velocity * update_time;
+                item.Velocity += item.Acceleration; // ?
+                item.Position += item.Velocity * update_time; // ?
+
+                Check_For_Collision(item);
+            }
+        }
+
+        private void Check_For_Collision(Item item)
+        {
+            if (item.Position.Y < 0)
+            {
+                item.Position = new Vector3D(-item.Position.X, -item.Position.Y, -item.Position.Z); // ?
+                item.Velocity = new Vector3D(-item.Velocity.X, -item.Velocity.Y, -item.Velocity.Z); // ?
             }
         }
 
         private void Main_Form_KeyDown(object sender, KeyEventArgs e)
         {
             const double camera_pan_dampener = 0.001;
-            const double camera_tilt_dampener = 0.000002;
+            const double camera_tilt_dampener = 0.000001;
 
             switch (e.KeyCode)
             {
                 case Keys.W:
                     // Pan forward
-                    scene.Render_Camera.Translate(scene.Render_Camera.World_Direction * camera_pan_dampener * update_time);
+                    scene.Render_Camera.Pan_Forward(camera_pan_dampener * update_time);
                     break;
                 case Keys.A:
                     // Pan left
-                    scene.Render_Camera.Translate(scene.Render_Camera.World_Direction_Right * -camera_pan_dampener * update_time);
+                    scene.Render_Camera.Pan_Left(camera_pan_dampener * update_time);
                     break;
                 case Keys.D:
                     // Pan right
-                    scene.Render_Camera.Translate(scene.Render_Camera.World_Direction_Right * camera_pan_dampener * update_time);
+                    scene.Render_Camera.Pan_Right(camera_pan_dampener * update_time);
                     break;
                 case Keys.S:
                     // Pan back
-                    scene.Render_Camera.Translate(scene.Render_Camera.World_Direction * -camera_pan_dampener * update_time);
+                    scene.Render_Camera.Pan_Back(camera_pan_dampener * update_time);
                     break;
                 case Keys.Q:
                     // Pan up
-                    scene.Render_Camera.Translate(scene.Render_Camera.World_Direction_Up * camera_pan_dampener * update_time);
+                    scene.Render_Camera.Pan_Up(camera_pan_dampener * update_time);
                     break;
                 case Keys.E:
                     // Pan down
-                    scene.Render_Camera.Translate(scene.Render_Camera.World_Direction_Up * -camera_pan_dampener * update_time);
+                    scene.Render_Camera.Pan_Down(camera_pan_dampener * update_time);
                     break;
                 case Keys.I:
                     // Rotate up
-                    Matrix4x4 transformation_up = Transform.Rotate(scene.Render_Camera.World_Direction_Right, camera_tilt_dampener * update_time);
-                    scene.Render_Camera.Set_Camera_Direction_1(new Vector3D(transformation_up * new Vector4D(scene.Render_Camera.World_Direction)), new Vector3D(transformation_up * new Vector4D(scene.Render_Camera.World_Direction_Up)));
+                    scene.Render_Camera.Rotate_Up(camera_tilt_dampener * update_time);
                     break;
                 case Keys.J:
                     // Rotate left
-                    Matrix4x4 transformation_left = Transform.Rotate(scene.Render_Camera.World_Direction_Up, camera_tilt_dampener * update_time);
-                    scene.Render_Camera.Set_Camera_Direction_3(new Vector3D(transformation_left * new Vector4D(scene.Render_Camera.World_Direction_Right)), new Vector3D(transformation_left * new Vector4D(scene.Render_Camera.World_Direction)));
+                    scene.Render_Camera.Rotate_Left(camera_tilt_dampener * update_time);
                     break;
                 case Keys.L:
                     // Rotate right
-                    Matrix4x4 transformation_right = Transform.Rotate(scene.Render_Camera.World_Direction_Up, -camera_tilt_dampener * update_time);
-                    scene.Render_Camera.Set_Camera_Direction_3(new Vector3D(transformation_right * new Vector4D(scene.Render_Camera.World_Direction_Right)), new Vector3D(transformation_right * new Vector4D(scene.Render_Camera.World_Direction)));
+                    scene.Render_Camera.Rotate_Right(camera_tilt_dampener * update_time);
                     break;
                 case Keys.K:
                     // Rotate down
-                    Matrix4x4 transformation_down = Transform.Rotate(scene.Render_Camera.World_Direction_Right, -camera_tilt_dampener * update_time);
-                    scene.Render_Camera.Set_Camera_Direction_1(new Vector3D(transformation_down * new Vector4D(scene.Render_Camera.World_Direction)), new Vector3D(transformation_down * new Vector4D(scene.Render_Camera.World_Direction_Up)));
+                    scene.Render_Camera.Rotate_Down(camera_tilt_dampener * update_time);
                     break;
                 case Keys.U:
                     // Roll left
-                    Matrix4x4 transformation_roll_left = Transform.Rotate(scene.Render_Camera.World_Direction, -camera_tilt_dampener * update_time);
-                    scene.Render_Camera.Set_Camera_Direction_2(new Vector3D(transformation_roll_left * new Vector4D(scene.Render_Camera.World_Direction_Up)), new Vector3D(transformation_roll_left * new Vector4D(scene.Render_Camera.World_Direction_Right)));
+                    scene.Render_Camera.Roll_Left(camera_tilt_dampener * update_time);
                     break;
                 case Keys.O:
                     // Roll right
-                    Matrix4x4 transformation_roll_right = Transform.Rotate(scene.Render_Camera.World_Direction, camera_tilt_dampener * update_time);
-                    scene.Render_Camera.Set_Camera_Direction_2(new Vector3D(transformation_roll_right * new Vector4D(scene.Render_Camera.World_Direction_Up)), new Vector3D(transformation_roll_right * new Vector4D(scene.Render_Camera.World_Direction_Right)));
+                    scene.Render_Camera.Roll_Right(camera_tilt_dampener * update_time);
                     break;
             }
         }

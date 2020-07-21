@@ -1,7 +1,6 @@
 ﻿using _3D_Engine;
-using System;
 
-namespace Physics_Simulator.Shapes
+namespace Physics_Simulator
 {
     public sealed class Item
     {

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Numerics;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -10,7 +11,7 @@ namespace Physics_Simulator
     public partial class Main_Form : Form
     {
         private Scene scene;
-        private List<Item> scene_items = new List<Item>();
+        private List<Shape> scene_shapes = new List<Shape>();
 
         private bool running = true;
         private long update_time;
@@ -22,6 +23,7 @@ namespace Physics_Simulator
 
             // Create scene
             scene = new Scene(Canvas_Box, Canvas_Box.Width, Canvas_Box.Height);
+            Settings.Mesh_Debug_Output_Verbosity = Verbosity.All;
 
             // Create origin and axes
             scene.Create_Origin();
@@ -31,11 +33,10 @@ namespace Physics_Simulator
             double camera_width = Canvas_Box.Width / 10;
             double camera_height = Canvas_Box.Height / 10;
 
-            Perspective_Camera camera = new Perspective_Camera(new Vector3D(0, 0, -100), scene.Shapes[0].Render_Mesh, Vector3D.Unit_Y, camera_width, camera_height, 10, 750);
+            Perspective_Camera camera = new Perspective_Camera(new Vector3D(0, 0, -100), scene.Meshes[0], Vector3D.Unit_Y, camera_width, camera_height, 10, 750);
             scene.Render_Camera = camera;
 
             // Add some shapes
-
             Vector3D[] texture_vertices = new Vector3D[4]
             {
                 new Vector3D(0, 0, 1),
@@ -45,19 +46,23 @@ namespace Physics_Simulator
             };
             Texture smiley = new Texture(Properties.Resources.smiley, texture_vertices);
 
-            Cube cube_mesh = new Cube(new Vector3D(10, 10, 10), Vector3D.Unit_Negative_Z, Vector3D.Unit_Y, 100);
-            Shape cube = new Shape(cube_mesh);
-            //scene.Add(cube);
-            Item cube_item = new Item(cube, Vector3D.Zero, new Vector3D(0, Constants.Grav_Acc, 0));
-            scene_items.Add(cube_item);
+            Cube cube_mesh = new Cube(new Vector3D(10, 10, 10), Vector3D.Unit_Z, Vector3D.Unit_Y, 100);
+            scene.Add(cube_mesh);
+            Shape cube = new Shape(cube_mesh, Vector3D.Zero, new Vector3D(0, Constants.Grav_Acc, 0));
+            scene_shapes.Add(cube);
 
-            Square square_mesh = new Square(Vector3D.Zero, Vector3D.Unit_X, Vector3D.Unit_Z, 100);
-            Shape square = new Shape(square_mesh);
-            scene.Add(square);
+            Point_Light point_light = new Point_Light(new Vector3D(0, 200, 0), Vector3D.Unit_Z, Vector3D.Unit_Y, 100) { Colour = Color.Green };
+            //scene.Add(point_light);
 
-            // Circle test_circle_mesh = new Circle(new Vector3D(100, 100, 100), Vector3D.Unit_X, Vector3D.Unit_Y, 50, 30);
-            //Shape test_circle = new Shape(test_circle_mesh);
-            //scene.Add(test_circle);
+            Square square_mesh = new Square(new Vector3D(100, 200, 100), Vector3D.Unit_X, Vector3D.Unit_Z, 100) { Face_Colour = Color.Red };
+            scene.Add(square_mesh);
+            Shape square = new Shape(square_mesh, Vector3D.Zero, new Vector3D(0, Constants.Grav_Acc, 0));
+            scene_shapes.Add(square);
+
+            Circle test_circle_mesh = new Circle(new Vector3D(200, 100, 100), Vector3D.Unit_X, Vector3D.Unit_Y, 50, 30) { Face_Colour = Color.Purple };
+            scene.Add(test_circle_mesh);
+            Shape test_circle = new Shape(test_circle_mesh, Vector3D.Zero, new Vector3D(0, Constants.Grav_Acc, 0));
+            scene_shapes.Add(test_circle);
 
             //Pyramid test_pyramid_mesh = new Pyramid(new Vector3D(100, 100, 100), Vector3D.Unit_X, Vector3D.Unit_Y, 50, 20, 30);
             //Shape test_pyramid = new Shape(test_pyramid_mesh);
@@ -118,27 +123,27 @@ namespace Physics_Simulator
 
         private void Update_Position()
         {
-            foreach (Item item in scene_items)
+            foreach (Shape shape in scene_shapes)
             {
-                item.Velocity += item.Acceleration; // ?
-                item.Position += item.Velocity * update_time; // ?
+                shape.Velocity += shape.Acceleration; // ?
+                shape.Position += shape.Velocity * update_time; // ?
 
-                Check_For_Collision(item);
+                Check_For_Collision(shape);
             }
         }
 
-        private void Check_For_Collision(Item item)
+        private void Check_For_Collision(Shape shape)
         {
-            if (item.Position.Y < 0)
+            if (shape.Position.Y < 0)
             {
-                item.Position = new Vector3D(-item.Position.X, -item.Position.Y, -item.Position.Z); // ?
-                item.Velocity = new Vector3D(-item.Velocity.X, -item.Velocity.Y, -item.Velocity.Z); // ?
+                shape.Position = new Vector3D(-shape.Position.X, -shape.Position.Y, -shape.Position.Z); // ?
+                shape.Velocity = new Vector3D(-shape.Velocity.X, -shape.Velocity.Y, -shape.Velocity.Z); // ?
             }
         }
 
         private void Main_Form_KeyDown(object sender, KeyEventArgs e)
         {
-            const double camera_pan_dampener = 0.001;
+            const double camera_pan_dampener = 0.0008;
             const double camera_tilt_dampener = 0.000001;
 
             switch (e.KeyCode)

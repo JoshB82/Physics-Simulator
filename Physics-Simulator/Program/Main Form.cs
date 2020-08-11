@@ -49,18 +49,24 @@ namespace Physics_Simulator
             Shape cube = new Shape(cube_mesh, Vector3D.Zero, new Vector3D(0, Constants.Grav_Acc, 0));
             scene_shapes.Add(cube);
 
-            //Custom teapot_mesh = new Custom(new Vector3D(150, 150, 150), Vector3D.Unit_Z, Vector3D.Unit_Y, "C:\\Users\\jbrya\\source\repos\\3D-Engine\\3D-Engine\\External\\Models\\teapot.obj");
-            //scene.Add(teapot_mesh);
+            string teapot_file_path = "C:\\Users\\jbrya\\source\\repos\\3D-Engine\\3D-Engine\\External\\Models\\teapot.obj";
+            Custom teapot_mesh = new Custom(new Vector3D(500, 10, 0), Vector3D.Unit_Z, Vector3D.Unit_Y, teapot_file_path);
 
-            //cube_mesh.Display_Direction_Arrows = true;
+            teapot_mesh.Scale(50);
+            teapot_mesh.Face_Colour = Color.Red;
 
-            /*
-            Ring ring_mesh = new Ring(Vector3D.One * 100, Vector3D.Unit_Z, Vector3D.Unit_Y, 100, 200, 50);
+            scene.Add(teapot_mesh);
+
+            Cone cone_mesh = new Cone(new Vector3D(1000, 10, 0), Vector3D.Unit_Z, Vector3D.Unit_Y, 50, 25, 50);
+            cone_mesh.Face_Colour = Color.Aquamarine;
+            scene.Add(cone_mesh);
+
+            Cylinder cylinder_mesh = new Cylinder(new Vector3D(1500, 10, 0), Vector3D.Unit_Z, Vector3D.Unit_Y, 100, 50, 50);
+            scene.Add(cylinder_mesh);
+
+            Ring ring_mesh = new Ring(new Vector3D(0, 500, 0), Vector3D.Unit_Z, Vector3D.Unit_Y, 100, 200, 50);
             scene.Add(ring_mesh);
-            */
-
-            //Arrow arrow_mesh = new Arrow(Vector3D.One * 100, Vector3D.One * 150, 50, 30, 75, 25, false);
-            //scene.Add(arrow_mesh);
+            ring_mesh.Face_Colour = Color.Orange;
 
             /*
             
@@ -78,10 +84,6 @@ namespace Physics_Simulator
             scene_shapes.Add(test_circle);
 
             */
-
-            //Pyramid test_pyramid_mesh = new Pyramid(new Vector3D(100, 100, 100), Vector3D.Unit_X, Vector3D.Unit_Y, 50, 20, 30);
-            //Shape test_pyramid = new Shape(test_pyramid_mesh);
-            //scene.Add(test_pyramid);
 
             // Start loop
             Thread thread = new Thread(Loop) { IsBackground = true };
@@ -122,9 +124,8 @@ namespace Physics_Simulator
 
                         Cursor.Position = new Point((int)mouse_centre.X, (int)mouse_centre.Y);//?
 
-                        //MessageBox.Show(Canvas_Box.Right.ToString());
-                        scene.Render_Camera.Rotate_Right(displacement.X * rotation_dampener);
-                        scene.Render_Camera.Rotate_Down(displacement.Y * rotation_dampener);
+                        scene.Render_Camera.Rotate_Right(displacement.X * rotation_dampener);//use update time?
+                        scene.Render_Camera.Rotate_Down(displacement.Y * rotation_dampener);//move entire keyboard here?
                     }
 
                     scene.Render();
@@ -172,9 +173,17 @@ namespace Physics_Simulator
 
         private void Main_Form_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.Escape && use_WASDQE_and_mouse) (use_keyboard_only, use_WASDQE_and_mouse) = (true, false);
-            if (e.KeyCode == Keys.Z && use_WASDQE_and_mouse) (use_keyboard_only, use_WASDQE_and_mouse) = (true, false);
-            if (e.KeyCode == Keys.X && use_keyboard_only) (use_keyboard_only, use_WASDQE_and_mouse) = (false, true);
+            if ((e.KeyCode == Keys.Escape && use_WASDQE_and_mouse) || (e.KeyCode == Keys.Z && use_WASDQE_and_mouse))
+            {
+                (use_keyboard_only, use_WASDQE_and_mouse) = (true, false);
+                Cursor.Show();
+            }
+            
+            if (e.KeyCode == Keys.X && use_keyboard_only)
+            {
+                (use_keyboard_only, use_WASDQE_and_mouse) = (false, true);
+                Cursor.Hide();
+            }
 
             const double camera_pan_dampener = 0.0008;
             const double camera_tilt_dampener = 0.000001;
@@ -240,8 +249,6 @@ namespace Physics_Simulator
         }
 
         private void Main_Form_Move(object sender, System.EventArgs e) => mouse_centre = new Vector2D(Left + Canvas_Box.Left + Canvas_Box.Width / 2, Top + Canvas_Box.Top + Canvas_Box.Height / 2);
-        //810,640
-        private void Main_Form_MouseHover(object sender, System.EventArgs e) { }//Cursor.Hide();
 
         private void keyboardMenuItem_Click(object sender, System.EventArgs e) => (use_keyboard_only, use_WASDQE_and_mouse) = (true, false);
 

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.Numerics;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -12,6 +11,11 @@ namespace Physics_Simulator
     {
         private Scene scene;
         private List<Shape> scene_shapes = new List<Shape>();
+
+        private Vector2D mouse_centre;
+
+        private bool use_keyboard_only = true;
+        private bool use_WASDQE_and_mouse = false;
 
         private bool running = true;
         private long update_time;
@@ -37,32 +41,43 @@ namespace Physics_Simulator
             scene.Render_Camera = camera;
 
             // Add some shapes
-            Vector3D[] texture_vertices = new Vector3D[4]
-            {
-                new Vector3D(0, 0, 1),
-                new Vector3D(1, 0, 1),
-                new Vector3D(1, 1, 1),
-                new Vector3D(0, 1, 1)
-            };
+            Vector3D[] texture_vertices = Texture.Generate_Vertices("Plane");
             Texture smiley = new Texture(Properties.Resources.smiley, texture_vertices);
 
-            Cube cube_mesh = new Cube(new Vector3D(10, 10, 10), Vector3D.Unit_Z, Vector3D.Unit_Y, 100);
+            Cube cube_mesh = new Cube(new Vector3D(10, 10, 10), Vector3D.Unit_Z, Vector3D.Unit_Y, 250); //{ Display_Direction_Arrows = true };
             scene.Add(cube_mesh);
             Shape cube = new Shape(cube_mesh, Vector3D.Zero, new Vector3D(0, Constants.Grav_Acc, 0));
             scene_shapes.Add(cube);
 
+            //Custom teapot_mesh = new Custom(new Vector3D(150, 150, 150), Vector3D.Unit_Z, Vector3D.Unit_Y, "C:\\Users\\jbrya\\source\repos\\3D-Engine\\3D-Engine\\External\\Models\\teapot.obj");
+            //scene.Add(teapot_mesh);
+
+            //cube_mesh.Display_Direction_Arrows = true;
+
+            /*
+            Ring ring_mesh = new Ring(Vector3D.One * 100, Vector3D.Unit_Z, Vector3D.Unit_Y, 100, 200, 50);
+            scene.Add(ring_mesh);
+            */
+
+            //Arrow arrow_mesh = new Arrow(Vector3D.One * 100, Vector3D.One * 150, 50, 30, 75, 25, false);
+            //scene.Add(arrow_mesh);
+
+            /*
+            
             Point_Light point_light = new Point_Light(new Vector3D(0, 200, 0), Vector3D.Unit_Z, Vector3D.Unit_Y, 100) { Colour = Color.Green };
-            //scene.Add(point_light);
+            scene.Add(point_light);
 
             Square square_mesh = new Square(new Vector3D(100, 200, 100), Vector3D.Unit_X, Vector3D.Unit_Z, 100) { Face_Colour = Color.Red };
             scene.Add(square_mesh);
             Shape square = new Shape(square_mesh, Vector3D.Zero, new Vector3D(0, Constants.Grav_Acc, 0));
             scene_shapes.Add(square);
 
-            Circle test_circle_mesh = new Circle(new Vector3D(200, 100, 100), Vector3D.Unit_X, Vector3D.Unit_Y, 50, 30) { Face_Colour = Color.Purple };
+            Circle test_circle_mesh = new Circle(new Vector3D(200, 100, 100), Vector3D.Unit_X, Vector3D.Unit_Y, 50, 30) { Face_Colour = Color.Purple, Display_Direction_Arrows = true };
             scene.Add(test_circle_mesh);
             Shape test_circle = new Shape(test_circle_mesh, Vector3D.Zero, new Vector3D(0, Constants.Grav_Acc, 0));
             scene_shapes.Add(test_circle);
+
+            */
 
             //Pyramid test_pyramid_mesh = new Pyramid(new Vector3D(100, 100, 100), Vector3D.Unit_X, Vector3D.Unit_Y, 50, 20, 30);
             //Shape test_pyramid = new Shape(test_pyramid_mesh);
@@ -73,7 +88,7 @@ namespace Physics_Simulator
             thread.Start();
         }
 
-        private void Loop()
+        private void Loop() //credit?
         {
             const int max_frames_per_second = 60;
             const int max_updates_per_second = 60;
@@ -98,6 +113,20 @@ namespace Physics_Simulator
 
                 if (frame_time >= frame_minimum_time)
                 {
+                    if (use_WASDQE_and_mouse)
+                    {
+                        const double rotation_dampener = 0.005;
+
+                        Vector2D mouse_position = new Vector2D(Cursor.Position.X, Cursor.Position.Y);
+                        Vector2D displacement = mouse_position - mouse_centre;
+
+                        Cursor.Position = new Point((int)mouse_centre.X, (int)mouse_centre.Y);//?
+
+                        //MessageBox.Show(Canvas_Box.Right.ToString());
+                        scene.Render_Camera.Rotate_Right(displacement.X * rotation_dampener);
+                        scene.Render_Camera.Rotate_Down(displacement.Y * rotation_dampener);
+                    }
+
                     scene.Render();
                     no_frames++;
                     frame_time -= frame_minimum_time;
@@ -112,7 +141,7 @@ namespace Physics_Simulator
 
                 if (now_time >= 1000 * timer)
                 {
-                    Invoke((MethodInvoker)delegate { Text = $"Physics Simulator - FPS: {no_frames}, UPS: {no_updates}"; }); // ?
+                    Invoke((MethodInvoker)delegate { Text = $"Physics Simulator - FPS: {no_frames}, UPS: {no_updates}" + ", Camera Position: " + scene.Render_Camera.World_Origin; }); // ?
                     no_frames = 0; no_updates = 0;
                     timer += 1;
                 }
@@ -143,6 +172,10 @@ namespace Physics_Simulator
 
         private void Main_Form_KeyDown(object sender, KeyEventArgs e)
         {
+            if (e.KeyCode == Keys.Escape && use_WASDQE_and_mouse) (use_keyboard_only, use_WASDQE_and_mouse) = (true, false);
+            if (e.KeyCode == Keys.Z && use_WASDQE_and_mouse) (use_keyboard_only, use_WASDQE_and_mouse) = (true, false);
+            if (e.KeyCode == Keys.X && use_keyboard_only) (use_keyboard_only, use_WASDQE_and_mouse) = (false, true);
+
             const double camera_pan_dampener = 0.0008;
             const double camera_tilt_dampener = 0.000001;
 
@@ -172,31 +205,60 @@ namespace Physics_Simulator
                     // Pan down
                     scene.Render_Camera.Pan_Down(camera_pan_dampener * update_time);
                     break;
-                case Keys.I:
-                    // Rotate up
-                    scene.Render_Camera.Rotate_Up(camera_tilt_dampener * update_time);
-                    break;
-                case Keys.J:
-                    // Rotate left
-                    scene.Render_Camera.Rotate_Left(camera_tilt_dampener * update_time);
-                    break;
-                case Keys.L:
-                    // Rotate right
-                    scene.Render_Camera.Rotate_Right(camera_tilt_dampener * update_time);
-                    break;
-                case Keys.K:
-                    // Rotate down
-                    scene.Render_Camera.Rotate_Down(camera_tilt_dampener * update_time);
-                    break;
-                case Keys.U:
-                    // Roll left
-                    scene.Render_Camera.Roll_Left(camera_tilt_dampener * update_time);
-                    break;
-                case Keys.O:
-                    // Roll right
-                    scene.Render_Camera.Roll_Right(camera_tilt_dampener * update_time);
-                    break;
             }
+
+            if (use_keyboard_only)
+            {
+                switch (e.KeyCode)
+                {
+                    case Keys.I:
+                        // Rotate up
+                        scene.Render_Camera.Rotate_Up(camera_tilt_dampener * update_time);
+                        break;
+                    case Keys.J:
+                        // Rotate left
+                        scene.Render_Camera.Rotate_Left(camera_tilt_dampener * update_time);
+                        break;
+                    case Keys.L:
+                        // Rotate right
+                        scene.Render_Camera.Rotate_Right(camera_tilt_dampener * update_time);
+                        break;
+                    case Keys.K:
+                        // Rotate down
+                        scene.Render_Camera.Rotate_Down(camera_tilt_dampener * update_time);
+                        break;
+                    case Keys.U:
+                        // Roll left
+                        scene.Render_Camera.Roll_Left(camera_tilt_dampener * update_time);
+                        break;
+                    case Keys.O:
+                        // Roll right
+                        scene.Render_Camera.Roll_Right(camera_tilt_dampener * update_time);
+                        break;
+                }
+            }
+        }
+
+        private void Main_Form_Move(object sender, System.EventArgs e) => mouse_centre = new Vector2D(Left + Canvas_Box.Left + Canvas_Box.Width / 2, Top + Canvas_Box.Top + Canvas_Box.Height / 2);
+        //810,640
+        private void Main_Form_MouseHover(object sender, System.EventArgs e) { }//Cursor.Hide();
+
+        private void keyboardMenuItem_Click(object sender, System.EventArgs e) => (use_keyboard_only, use_WASDQE_and_mouse) = (true, false);
+
+        private void mouseMenuItem_Click(object sender, System.EventArgs e) => (use_keyboard_only, use_WASDQE_and_mouse) = (false, true);
+
+        private void aboutToolStripMenuItem_Click(object sender, System.EventArgs e)
+        {
+            string about_text = "Physics Simulator, 3D-Engine | Programmed by Josh Bryant.";
+            MessageBox.Show(about_text,"About");
+        }
+
+        private void Main_Form_Resize(object sender, System.EventArgs e)
+        {
+            scene.Width = Canvas_Box.Width;
+            scene.Height = Canvas_Box.Height;
+            scene.Render_Camera.Width = Canvas_Box.Width / 10;
+            scene.Render_Camera.Height = Canvas_Box.Height / 10;
         }
     }
 }

@@ -42,6 +42,8 @@
             this.printPreviewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.viewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.statisticsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.cameraControlsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.keyboardMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -63,13 +65,13 @@
             this.Canvas_Box.Size = new System.Drawing.Size(810, 640);
             this.Canvas_Box.TabIndex = 1;
             this.Canvas_Box.TabStop = false;
-            this.Canvas_Box.Paint += new System.Windows.Forms.PaintEventHandler(this.Canvas_Box_Paint);
             // 
             // menuStrip
             // 
             this.menuStrip.ImageScalingSize = new System.Drawing.Size(20, 20);
             this.menuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fileToolStripMenuItem,
+            this.viewToolStripMenuItem,
             this.settingsToolStripMenuItem,
             this.helpToolStripMenuItem});
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
@@ -166,13 +168,28 @@
             this.exitToolStripMenuItem.Size = new System.Drawing.Size(181, 26);
             this.exitToolStripMenuItem.Text = "E&xit";
             // 
+            // viewToolStripMenuItem
+            // 
+            this.viewToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.statisticsMenuItem});
+            this.viewToolStripMenuItem.Name = "viewToolStripMenuItem";
+            this.viewToolStripMenuItem.Size = new System.Drawing.Size(55, 24);
+            this.viewToolStripMenuItem.Text = "View";
+            // 
+            // statisticsMenuItem
+            // 
+            this.statisticsMenuItem.Name = "statisticsMenuItem";
+            this.statisticsMenuItem.Size = new System.Drawing.Size(150, 26);
+            this.statisticsMenuItem.Text = "Statistics";
+            this.statisticsMenuItem.Click += new System.EventHandler(this.statisticsMenuItem_Click);
+            // 
             // settingsToolStripMenuItem
             // 
             this.settingsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.cameraControlsMenuItem});
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(71, 24);
-            this.settingsToolStripMenuItem.Text = "&Setings";
+            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(76, 24);
+            this.settingsToolStripMenuItem.Text = "&Settings";
             // 
             // cameraControlsMenuItem
             // 
@@ -269,6 +286,8 @@
         private System.Windows.Forms.ToolStripMenuItem cameraControlsMenuItem;
         private System.Windows.Forms.ToolStripMenuItem keyboardMenuItem;
         private System.Windows.Forms.ToolStripMenuItem mouseMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem viewToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem statisticsMenuItem;
     }
 }
 

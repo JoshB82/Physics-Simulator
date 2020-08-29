@@ -1,16 +1,21 @@
-﻿using _3D_Engine;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Threading;
 using System.Windows.Forms;
 
+using _3D_Engine;
+
 namespace Physics_Simulator
 {
     public partial class Main_Form : Form
     {
+        private Statistics statistics_form = new Statistics();
+        public static bool statistics_form_show = false;
+
         private Scene scene;
-        private List<Shape> scene_shapes = new List<Shape>();
+        private List<Shape> shapes = new List<Shape>();
 
         private Vector2D mouse_centre;
 
@@ -22,33 +27,53 @@ namespace Physics_Simulator
 
         public Main_Form()
         {
-            // Create form
+            // Create main form
             InitializeComponent();
 
             // Create scene
-            scene = new Scene(Canvas_Box, Canvas_Box.Width, Canvas_Box.Height);
+            scene = new Scene(Canvas_Box, Canvas_Box.Width, Canvas_Box.Height); // panel?
+            
+            // Set settings
             Settings.Mesh_Debug_Output_Verbosity = Verbosity.All;
 
             // Create origin and axes
             scene.Create_Origin();
             scene.Create_Axes();
 
-            // Create camera
-            double camera_width = Canvas_Box.Width / 10;
-            double camera_height = Canvas_Box.Height / 10;
+            // Create a camera
+            double camera_width = Canvas_Box.Width / 10, camera_height = Canvas_Box.Height / 10;
 
             Perspective_Camera camera = new Perspective_Camera(new Vector3D(0, 0, -100), scene.Meshes[0], Vector3D.Unit_Y, camera_width, camera_height, 10, 750);
+            scene.Add(camera);
             scene.Render_Camera = camera;
 
-            // Add some shapes
-            Vector3D[] texture_vertices = Texture.Generate_Vertices("Plane");
-            Texture smiley = new Texture(Properties.Resources.smiley, texture_vertices);
-
-            Cube cube_mesh = new Cube(new Vector3D(10, 10, 10), Vector3D.Unit_Z, Vector3D.Unit_Y, 250); //{ Display_Direction_Arrows = true };
+            // Add some meshes
+            Cube cube_mesh = new Cube(new Vector3D(100, 100, 300), Vector3D.Unit_Z, Vector3D.Unit_Y, 100);
             scene.Add(cube_mesh);
-            Shape cube = new Shape(cube_mesh, Vector3D.Zero, new Vector3D(0, Constants.Grav_Acc, 0));
-            scene_shapes.Add(cube);
+            Shape cube = new Shape(cube_mesh, Vector3D.Zero, Constants.Grav_Acc_Vector);
+            shapes.Add(cube);
 
+            Square floor_mesh = new Square(Vector3D.Zero, Vector3D.Unit_Z, Vector3D.Unit_Y, 600);
+            scene.Add(floor_mesh);
+            floor_mesh.Face_Colour = Color.Brown;
+
+            // Add some lights
+            Distant_Light distant_light = new Distant_Light(new Vector3D(0, 300, 0), Vector3D.Unit_Z, Vector3D.Unit_Y, 1000);
+            scene.Add(distant_light);
+
+            distant_light.Show_Icon = true;
+
+            // Call some methods
+            /*
+            scene.Generate_MWV_Matrices();
+            scene.Generate_Shadow_Map(distant_light);
+            distant_light.Export_Shadow_Map();
+            */
+
+            // Change some properties
+            distant_light.Colour = Color.Goldenrod;
+
+            /*
             string teapot_file_path = "C:\\Users\\jbrya\\source\\repos\\3D-Engine\\3D-Engine\\External\\Models\\teapot.obj";
             Custom teapot_mesh = new Custom(new Vector3D(500, 10, 0), Vector3D.Unit_Z, Vector3D.Unit_Y, teapot_file_path);
 
@@ -56,7 +81,17 @@ namespace Physics_Simulator
             teapot_mesh.Face_Colour = Color.Red;
 
             scene.Add(teapot_mesh);
+            */
+            /*
+            string seahorse_file_path = "C:\\Users\\jbrya\\source\\repos\\3D-Engine\\3D-Engine\\External\\Models\\seahorse.obj";
+            Custom seahorse_mesh = new Custom(new Vector3D(1000, 10, 0), Vector3D.Unit_Z, Vector3D.Unit_Y, seahorse_file_path);
 
+            seahorse_mesh.Scale(50);
+            seahorse_mesh.Face_Colour = Color.Gray;
+
+            scene.Add(seahorse_mesh);
+            */
+            /*
             Cone cone_mesh = new Cone(new Vector3D(1000, 10, 0), Vector3D.Unit_Z, Vector3D.Unit_Y, 50, 25, 50);
             cone_mesh.Face_Colour = Color.Aquamarine;
             scene.Add(cone_mesh);
@@ -68,21 +103,10 @@ namespace Physics_Simulator
             scene.Add(ring_mesh);
             ring_mesh.Face_Colour = Color.Orange;
 
-            /*
-            
-            Point_Light point_light = new Point_Light(new Vector3D(0, 200, 0), Vector3D.Unit_Z, Vector3D.Unit_Y, 100) { Colour = Color.Green };
-            scene.Add(point_light);
-
-            Square square_mesh = new Square(new Vector3D(100, 200, 100), Vector3D.Unit_X, Vector3D.Unit_Z, 100) { Face_Colour = Color.Red };
+            Vector3D[] texture_vertices = Texture.Generate_Vertices("Square");
+            Texture smiley = new Texture(Properties.Resources.smiley, texture_vertices);
+            Square square_mesh = new Square(new Vector3D(500, 0, 500), Vector3D.Unit_Y, Vector3D.Unit_Negative_Z, 100, smiley);
             scene.Add(square_mesh);
-            Shape square = new Shape(square_mesh, Vector3D.Zero, new Vector3D(0, Constants.Grav_Acc, 0));
-            scene_shapes.Add(square);
-
-            Circle test_circle_mesh = new Circle(new Vector3D(200, 100, 100), Vector3D.Unit_X, Vector3D.Unit_Y, 50, 30) { Face_Colour = Color.Purple, Display_Direction_Arrows = true };
-            scene.Add(test_circle_mesh);
-            Shape test_circle = new Shape(test_circle_mesh, Vector3D.Zero, new Vector3D(0, Constants.Grav_Acc, 0));
-            scene_shapes.Add(test_circle);
-
             */
 
             // Start loop
@@ -142,18 +166,16 @@ namespace Physics_Simulator
 
                 if (now_time >= 1000 * timer)
                 {
-                    Invoke((MethodInvoker)delegate { Text = $"Physics Simulator - FPS: {no_frames}, UPS: {no_updates}" + ", Camera Position: " + scene.Render_Camera.World_Origin; }); // ?
+                    Invoke((MethodInvoker)delegate { Text = $"Physics Simulator - FPS: {no_frames}, UPS: {no_updates}"; }); // ?
                     no_frames = 0; no_updates = 0;
                     timer += 1;
                 }
             }
         }
 
-        private void Canvas_Box_Paint(object sender, PaintEventArgs e) => e.Graphics.DrawImageUnscaled(scene.Canvas, Point.Empty);
-
         private void Update_Position()
         {
-            foreach (Shape shape in scene_shapes)
+            foreach (Shape shape in shapes)
             {
                 shape.Velocity += shape.Acceleration; // ?
                 shape.Position += shape.Velocity * update_time; // ?
@@ -246,6 +268,8 @@ namespace Physics_Simulator
                         break;
                 }
             }
+
+            if (statistics_form_show) Update_Statistics();
         }
 
         private void Main_Form_Move(object sender, System.EventArgs e) => mouse_centre = new Vector2D(Left + Canvas_Box.Left + Canvas_Box.Width / 2, Top + Canvas_Box.Top + Canvas_Box.Height / 2);
@@ -257,7 +281,7 @@ namespace Physics_Simulator
         private void aboutToolStripMenuItem_Click(object sender, System.EventArgs e)
         {
             string about_text = "Physics Simulator, 3D-Engine | Programmed by Josh Bryant.";
-            MessageBox.Show(about_text,"About");
+            MessageBox.Show(about_text, "About");
         }
 
         private void Main_Form_Resize(object sender, System.EventArgs e)
@@ -266,6 +290,64 @@ namespace Physics_Simulator
             scene.Height = Canvas_Box.Height;
             scene.Render_Camera.Width = Canvas_Box.Width / 10;
             scene.Render_Camera.Height = Canvas_Box.Height / 10;
+        }
+
+        private void statisticsMenuItem_Click(object sender, System.EventArgs e)
+        {
+            statistics_form.Show();
+            statistics_form_show = true;
+            Update_Statistics();
+        }
+
+        private void Update_Statistics()
+        {
+            statistics_form.listView.Items.Clear();
+
+            foreach (Camera camera in scene.Cameras)
+            {
+                string[] camera_data = new string[]
+                {
+                    camera.ID.ToString(),
+                    camera.GetType().Name,
+                    $"({Math.Round(camera.World_Origin.X, 2)}, {Math.Round(camera.World_Origin.Y, 2)}, {Math.Round(camera.World_Origin.Z, 2)})",
+                    $"({Math.Round(camera.World_Direction_Forward.X, 2)}, {Math.Round(camera.World_Direction_Forward.Y, 2)}, {Math.Round(camera.World_Direction_Forward.Z, 2)})",
+                    $"({Math.Round(camera.World_Direction_Up.X, 2)}, {Math.Round(camera.World_Direction_Up.Y, 2)}, {Math.Round(camera.World_Direction_Up.Z, 2)})",
+                    $"({Math.Round(camera.World_Direction_Right.X, 2)}, {Math.Round(camera.World_Direction_Right.Y, 2)}, {Math.Round(camera.World_Direction_Right.Z, 2)})"
+                };
+
+                ListViewItem row = new ListViewItem(camera_data);
+                statistics_form.listView.Items.Add(row);
+            }
+            foreach (Light light in scene.Lights)
+            {
+                string[] light_data = new string[]
+                {
+                    light.ID.ToString(),
+                    light.GetType().Name,
+                    light.World_Origin.ToString(),
+                    light.World_Direction_Forward.ToString(),
+                    light.World_Direction_Up.ToString(),
+                    light.World_Direction_Right.ToString()
+                };
+
+                ListViewItem row = new ListViewItem(light_data);
+                statistics_form.listView.Items.Add(row);
+            }
+            foreach (Mesh mesh in scene.Meshes)
+            {
+                string[] mesh_data = new string[]
+                {
+                    mesh.ID.ToString(),
+                    mesh.GetType().Name,
+                    mesh.World_Origin.ToString(),
+                    mesh.World_Direction_Forward.ToString(),
+                    mesh.World_Direction_Up.ToString(),
+                    mesh.World_Direction_Right.ToString()
+                };
+
+                ListViewItem row = new ListViewItem(mesh_data);
+                statistics_form.listView.Items.Add(row);
+            }
         }
     }
 }
